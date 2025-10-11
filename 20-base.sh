@@ -44,6 +44,7 @@ AddPackage whois                   # Intelligent WHOIS client
 AddPackage yubikey-manager         # Python library and command line tool for configuring a YubiKey
 AddPackage yubico-pam              # Yubico YubiKey PAM module
 AddPackage yubikey-personalization # Yubico YubiKey Personalization library and tool
+AddPackage zram-generator          # Systemd unit generator for zram devices
 AddPackage zsh                     # A very advanced and programmable command interpreter (shell) for UNIX
 
 CreateDir /etc/userdb
@@ -105,6 +106,19 @@ EOF
 
 sed -i -f - "$(GetPackageOriginalFile sudo /etc/pam.d/sudo)" <<EOF
 /^#%PAM-1.0/ a auth        sufficient  pam_u2f.so  nouserok pinverification=1 cue
+EOF
+
+cat >"$(CreateFile /etc/systemd/zram-generator.conf)" <<EOF
+[zram0]
+zram-size = min(ram/2, 8192)
+compression-algorithm = zstd
+EOF
+
+cat >"$(CreateFile /etc/sysctl.d/99-vm-zram-parameters.conf)" <<EOF
+vm.swappiness = 180
+vm.watermark_boost_factor = 0
+vm.watermark_scale_factor = 125
+vm.page-cluster = 0
 EOF
 
 cat >"$(CreateFile /etc/zsh/zshenv)" <<"EOF"
