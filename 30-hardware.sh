@@ -20,8 +20,13 @@ AddPackage piavpn-bin             # Private Internet Access client
 AddPackage mesa       # Open-source OpenGL drivers
 AddPackage mesa-utils # Essential Mesa utilities
 
+if [[ $(GetNvidiaModel) -ge 1650 ]]; then
+	AddPackage nvidia-open-dkms # NVIDIA open kernel modules - module sources (Requires dkms and headers)
+elif [[ $(GetNvidiaModel) -gt 0 ]]; then
+	AddPackage nvidia-dkms # NVIDIA kernel modules - module sources (Requires dkms and headers)
+fi
+
 if [[ $(GetNvidiaModel) -gt 0 ]]; then
-	AddPackage nvidia       # NVIDIA kernel modules
 	AddPackage nvidia-prime # NVIDIA Prime Render Offload configuration and utilities
 	AddUser nvidia-persistenced '!*' 143 143 '!*' 'NVIDIA Persistence Daemon' / /usr/bin/nologin '' 1
 fi
