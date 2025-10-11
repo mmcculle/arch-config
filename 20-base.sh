@@ -8,6 +8,7 @@ AddPackage dash                    # POSIX compliant shell that aims to be as sm
 AddPackage debugedit               # Tool to mangle source locations in .debug files
 AddPackage devtools                # Tools for Arch Linux package maintainers
 AddPackage dialog                  # A tool to display dialog boxes from shell scripts
+AddPackage dkms                    # Dynamic Kernel Modules System
 AddPackage dmidecode               # Desktop Management Interface table related utilities
 AddPackage fd                      # Simple, fast and user-friendly alternative to find
 AddPackage eza                     # A modern replacement for ls (community fork of exa)
