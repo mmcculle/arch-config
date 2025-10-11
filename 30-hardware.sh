@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-declare -a _custom_modules
-
 AddPackage android-udev # Udev rules to connect Android devices to your linux box
 AddPackage blueman      # GTK+ Bluetooth Manager
 AddPackage bluez        # Daemons for the bluetooth protocol stack
