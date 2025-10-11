@@ -46,6 +46,8 @@ AddPackage yubico-pam              # Yubico YubiKey PAM module
 AddPackage yubikey-personalization # Yubico YubiKey Personalization library and tool
 AddPackage zsh                     # A very advanced and programmable command interpreter (shell) for UNIX
 
+CreateDir /etc/userdb
+
 cat >"$(CreateFile /etc/hostname)" <<EOF
 $_hostname
 EOF

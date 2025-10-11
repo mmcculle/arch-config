@@ -68,6 +68,7 @@ AddGroup groups '!*' 983
 AddGroup systemd-journal '!*' 982
 AddGroup rfkill '!*' 981
 AddGroup adbusers '!*' 973
+AddGroup clock '!*' 967
 
 CreateFile /etc/subgid- >/dev/null
 CreateFile /etc/subuid- >/dev/null
