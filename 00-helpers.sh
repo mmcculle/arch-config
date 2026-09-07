@@ -335,7 +335,7 @@ function CopyFileFromOutputTo() {
 #
 # Downloads Tarball from an URL and extracts to a tmp folder then extracts
 # folder or file from it and copies it to the output path
-function GetFilesFromOnlineTarball() {
+function GetFilesFromOnlineTarball() (
 	local tarball_URL="$1"
 	local src_files="$2"
 	local strip_component="$3"
@@ -368,4 +368,16 @@ function GetFilesFromOnlineTarball() {
 	done
 	popd || OnError
 	rm -rf "$_dl_tmp_folder"
+)
+
+IsIsaLevel4Supported() {
+  /lib/ld-linux-x86-64.so.2 --help | grep "x86-64-v4 (supported, searched)" > /dev/null
+  echo $?
+}
+
+AconfNeedProgram gcc gcc N
+
+IsZnvert45Supported() {
+  gcc -march=native -Q --help=target 2>&1 | grep 'march' | grep -E '(znver4|znver5)' > /dev/null
+  echo $?
 }

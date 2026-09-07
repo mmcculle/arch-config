@@ -10,6 +10,7 @@ AddUser http '!*' 33 33 '!*' '' /srv/http /usr/bin/nologin '' ''
 AddUser uuidd '!*' 68 68 '!*' '' / /usr/bin/nologin '' 1
 AddUser dbus '!*' 81 81 '!*' 'System Message Bus' / /usr/bin/nologin '' ''
 AddUser polkitd '!*' 102 102 '!*' 'User for polkitd' / /usr/bin/nologin '' ''
+AddUser pcscd '!*' 966 966 '!*' 'PC/SC Smart Card Daemon' / /usr/bin/nologin '' 1
 AddUser alpm '!*' 968 968 '!*' 'Arch Linux Package Management' / /usr/bin/nologin '' ''
 AddUser git '!*' 970 970 '!*' 'git daemon user' / /usr/bin/git-shell '' ''
 AddUser tss '!*' 974 974 '!*' 'tss user for tpm2' / /usr/bin/nologin '' ''
@@ -25,15 +26,13 @@ AddUser nobody '!*' 65534 65534 '!*' 'Kernel Overflow User' / /usr/bin/nologin '
 AddUser avahi '!*' 971 971 '!*' 'Avahi mDNS/DNS-SD daemon' / /usr/bin/nologin '' ''
 
 # Normal users
-if [[ "$_system_id" == "$_swordfish2_ID" ]]; then
-	AddUser mmcculle "$(getpassword mmcculle)" 1000 1000 '!' '' /home/mmcculle /usr/bin/zsh wheel ''
-	cat >"$(CreateFile /etc/subgid)" <<EOF
+AddUser mmcculle "$(getpassword mmcculle)" 1000 1000 '!' '' /home/mmcculle /usr/bin/zsh wheel ''
+cat >"$(CreateFile /etc/subgid)" <<EOF
 mmcculle:100000:65536
 EOF
 	cat >"$(CreateFile /etc/subuid)" <<EOF
 mmcculle:100000:65536
 EOF
-fi
 
 # Base Groups
 AddGroup sys '!*' 3
@@ -45,6 +44,7 @@ AddGroup proc '!*' 26
 AddGroup games '!*' 50
 AddGroup lock '!*' 54
 AddGroup network '!*' 90
+AddGroup empower '!*' 959
 AddGroup floppy '!*' 94
 AddGroup scanner '!*' 96
 AddGroup power '!*' 98
@@ -69,6 +69,3 @@ AddGroup systemd-journal '!*' 982
 AddGroup rfkill '!*' 981
 AddGroup adbusers '!*' 973
 AddGroup clock '!*' 967
-
-CreateFile /etc/subgid- >/dev/null
-CreateFile /etc/subuid- >/dev/null

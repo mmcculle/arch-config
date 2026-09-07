@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
+AddPackage rage-encryption # Rust implementation of the age encryption tool
 
+AddPackage age                     # A simple, modern and secure file encryption tool
+AddPackage age-plugin-yubikey      # Yubikey plugin for age
 AddPackage autoconf                # A GNU tool for automatically configuring source code
 AddPackage automake                # A GNU tool for automatically creating Makefiles
 AddPackage base                    # Minimal package set to define a basic Arch Linux installation
@@ -13,8 +16,10 @@ AddPackage dmidecode               # Desktop Management Interface table related 
 AddPackage fd                      # Simple, fast and user-friendly alternative to find
 AddPackage eza                     # A modern replacement for ls (community fork of exa)
 AddPackage fakeroot                # Tool for simulating superuser privileges
+AddPackage fcron                   # Feature-rich cron implementation
 AddPackage gdb                     # The GNU Debugger
 AddPackage git                     # the fast distributed version control system
+AddPackage gptfdisk                # A text-mode partitioning tool that works on GUID Partition Table (GPT) disks
 AddPackage intel-ucode             # Microcode update files for Intel CPUs
 AddPackage libfido2                # Library functionality for FIDO 2.0, including communication with a device over USB
 AddPackage libcurl-gnutls          # command line tool and library for transferring data with URLs (no versioned symbols, linked against gnutls)
@@ -28,15 +33,16 @@ AddPackage openssh                 # SSH protocol implementation for remote logi
 AddPackage pam-u2f                 # Universal 2nd Factor (U2F) PAM authentication module from Yubico
 AddPackage patch                   # A utility to apply patch files to original sources
 AddPackage pkgconf                 # Package compiler and linker metadata toolkit
+AddPackage rage-encryption         # Rust implementation of the age encryption tool
 AddPackage ripgrep                 # A search tool that combines the usability of ag with the raw speed of grep
 AddPackage ripgrep-all             # rga: ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, etc.
-AddPackage rofi                    # A window switcher, application launcher and dmenu replacement
 AddPackage srm                     # A secure replacement for rm(1) that overwrites data before unlinking
 AddPackage sudo                    # Give certain users the ability to run some commands as root
 AddPackage texinfo                 # GNU documentation system for on-line information and printed output
 AddPackage time                    # Utility for monitoring a program's use of system resources
 AddPackage tldr                    # Command line client for tldr, a collection of simplified man pages.
 AddPackage unzip                   # For extracting and viewing files in .zip archives
+AddPackage upower                  # Abstraction for enumerating power devices, listening to device events and querying history and statistics
 AddPackage vi                      # The original ex/vi text editor
 AddPackage vim                     # Vi Improved, a highly configurable, improved version of the vi text editor
 AddPackage wget                    # Network utility to retrieve files from the web
@@ -45,9 +51,18 @@ AddPackage whois                   # Intelligent WHOIS client
 AddPackage yubikey-manager         # Python library and command line tool for configuring a YubiKey
 AddPackage yubico-pam              # Yubico YubiKey PAM module
 AddPackage yubikey-personalization # Yubico YubiKey Personalization library and tool
+AddPackage systemd-resolvconf # systemd resolvconf replacement (for use with systemd-resolved)
 AddPackage zram-generator          # Systemd unit generator for zram devices
 AddPackage zsh                     # A very advanced and programmable command interpreter (shell) for UNIX
+AddPackage zsh-completions         # Additional completion definitions for Zsh
 
+RemovePackage vi
+
+AddUser fcron '!*' 23 23 '!*' '' /var/spool/fcron /usr/bin/nologin '' ''
+AddUser systemd-imds '!*' 965 965 '!*' 'systemd Instance Metadata' / /usr/bin/nologin '' 1
+
+CreateDir /etc/audit/plugins.d 750
+CreateDir /etc/audit/rules.d
 CreateDir /etc/userdb
 
 cat >"$(CreateFile /etc/hostname)" <<EOF
@@ -100,13 +115,56 @@ cat >>"$(GetPackageOriginalFile filesystem /etc/shells)" <<EOF
 /bin/dash
 EOF
 
+cat >"$(CreateFile /etc/pam.d/polkit-1)" <<'EOF'
+#%PAM-1.0
+auth        sufficient  pam_u2f.so  nouserok pinverification=1 cue
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    include      system-auth
+EOF
+
+sed -i -f - "$(GetPackageOriginalFile util-linux /etc/pam.d/login)" <<EOF
+/^#%PAM-1.0/ a\
+auth       sufficient   pam_u2f.so cue prompt nouserok
+/^\s*$/d
+EOF
+
 sed -i -f - "$(GetPackageOriginalFile pambase /etc/pam.d/system-local-login)" <<EOF
-/^#%PAM-1.0/ a auth      sufficient pam_u2f.so  nouserok pinverification=1 cue
+/^#%PAM-1.0/ a\
+auth      sufficient pam_u2f.so  nouserok pinverification=1 cue
 /^\s*$/d
 EOF
 
 sed -i -f - "$(GetPackageOriginalFile sudo /etc/pam.d/sudo)" <<EOF
-/^#%PAM-1.0/ a auth        sufficient  pam_u2f.so  nouserok pinverification=1 cue
+/^#%PAM-1.0/ a\
+auth        sufficient  pam_u2f.so  nouserok pinverification=1 cue
+EOF
+
+sed -i -f - "$(GetPackageOriginalFile greetd /etc/pam.d/greetd)" <<EOF
+/^#%PAM-1.0/ a\
+# BEGIN DMS GREETER AUTH (managed by dms greeter sync)\
+auth sufficient pam_u2f.so cue nouserok timeout=10\
+# END DMS GREETER AUTH
+/^\s*$/d
+EOF
+
+sed -i -f - "$(GetPackageOriginalFile systemd /etc/systemd/sleep.conf)" <<'EOF'
+/AllowSuspend/ {
+s/^#//
+}
+/AllowHibernation/ {
+s/^#//
+s/yes/no/
+}
+/AllowSuspendThenHibernate/ {
+s/^#//
+s/yes/no/
+}
+/AllowHybridSleep/ {
+s/^#//
+s/yes/no/
+}
 EOF
 
 cat >"$(CreateFile /etc/systemd/zram-generator.conf)" <<EOF
@@ -128,10 +186,6 @@ cat >"$(CreateFile /etc/zsh/zshenv)" <<"EOF"
 #
 # Set the global Environmental Variables
 
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:=$HOME/.config}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:=$HOME/.local/share}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:=$HOME/.cache}"
-
 if [[ -d "$XDG_CONFIG_HOME/zsh/" ]]; then
     export ZDOTDIR="$XDG_CONFIG_HOME/zsh/"
 fi
@@ -140,3 +194,19 @@ EOF
 CreateLink /etc/systemd/system/timers.target.wants/fstrim.timer /usr/lib/systemd/system/fstrim.timer
 CreateLink /etc/systemd/system/sockets.target.wants/pcscd.socket /usr/lib/systemd/system/pcscd.socket
 CreateLink /etc/systemd/user/sockets.target.wants/p11-kit-server.socket /usr/lib/systemd/user/p11-kit-server.socket
+CreateLink /etc/systemd/system/autovt@.service /usr/lib/systemd/system/getty@.service
+CreateLink /etc/systemd/system/avahi-daemon.service /dev/null
+CreateLink /etc/systemd/system/bluetooth.target.wants/bluetooth.service /usr/lib/systemd/system/bluetooth.service
+CreateLink /etc/systemd/system/dbus-org.bluez.service /usr/lib/systemd/system/bluetooth.service
+CreateLink /etc/systemd/system/dbus-org.freedesktop.network1.service /usr/lib/systemd/system/systemd-networkd.service
+CreateLink /etc/systemd/system/dbus-org.freedesktop.resolve1.service /usr/lib/systemd/system/systemd-resolved.service
+CreateLink /etc/systemd/system/multi-user.target.wants/keyd.service /usr/lib/systemd/system/keyd.service
+CreateLink /etc/systemd/system/multi-user.target.wants/systemd-networkd.service /usr/lib/systemd/system/systemd-networkd.service
+CreateLink /etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service /usr/lib/systemd/system/systemd-networkd-wait-online.service
+CreateLink /etc/systemd/system/sockets.target.wants/systemd-networkd-varlink.socket /usr/lib/systemd/system/systemd-networkd-varlink.socket
+CreateLink /etc/systemd/system/sockets.target.wants/systemd-networkd.socket /usr/lib/systemd/system/systemd-networkd.socket
+CreateLink /etc/systemd/system/sockets.target.wants/systemd-resolved-monitor.socket /usr/lib/systemd/system/systemd-resolved-monitor.socket
+CreateLink /etc/systemd/system/sockets.target.wants/systemd-resolved-varlink.socket /usr/lib/systemd/system/systemd-resolved-varlink.socket
+CreateLink /etc/systemd/system/sysinit.target.wants/systemd-network-generator.service /usr/lib/systemd/system/systemd-network-generator.service
+CreateLink /etc/systemd/system/sysinit.target.wants/systemd-resolved.service /usr/lib/systemd/system/systemd-resolved.service
+CreateLink /etc/systemd/system/multi-user.target.wants/fcron.service /usr/lib/systemd/system/fcron.service

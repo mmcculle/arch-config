@@ -1,0 +1,7 @@
+#%PAM-1.0
+# BEGIN DMS LOCKSCREEN U2F AUTH (managed by dms auth sync)
+auth    required    pam_u2f.so  cue nouserok timeout=10
+account required    pam_permit.so
+password required   pam_deny.so
+session required    pam_permit.so
+# END DMS LOCKSCREEN U2F AUTH

@@ -20,10 +20,8 @@ AppendGroupMembers <"$tmp_dir"/groups/group >"$output_dir"/files/etc/group
 AppendGroupMembers <"$tmp_dir"/groups/gshadow >"$output_dir"/files/etc/gshadow
 
 for f in passwd shadow group gshadow; do
-	cp "$output_dir"/files/etc/"$f"{,-}
 	if [[ $f == *shadow ]]; then
 		SetFileProperty /etc/"$f" mode 600
-		SetFileProperty /etc/"$f"- mode 600
 	fi
 done
 

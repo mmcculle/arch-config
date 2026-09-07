@@ -15,7 +15,7 @@ def file_belongs_to_package(path):
 
 
 def diff_against_pkg_default(path, pkg_name, pkg_ver):
-    diff_file = pkg_name + '_' + os.path.split(path)[1] + '.diff'
+    diff_file = 'patches/' + pkg_name + '_' + os.path.split(path)[1] + '.diff'
     # https://bbs.archlinux.org/viewtopic.php?pid=1464430#p1464430
     # Example:
     # tar -xOf /var/cache/pacman/pkg/pacman-5.1.3-1-x86_64.pkg.tar.xz etc/pacman.conf | diff -u - /etc/pacman.conf
@@ -24,6 +24,7 @@ def diff_against_pkg_default(path, pkg_name, pkg_ver):
     return diff_file
 
 
+os.makedirs("patches", exist_ok=True)
 with open('99-unsorted.sh', 'r') as f:
     lines = f.read(-1).splitlines()
 
